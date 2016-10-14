@@ -18,26 +18,35 @@ public class WheelTimer {
     private final List<Wheel<TimeoutItem>> wheels;
     private final long tickDurationInMillis;
 
-    ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService ScheduledService = Executors.newSingleThreadScheduledExecutor();
 
     public WheelTimer(Timeout tickDuration, Timeout maxTimeout) {
         this.tickDurationInMillis = TimeUnit.MILLISECONDS.convert(tickDuration.value, tickDuration.unit);
         long maxTimeoutInMillis = TimeUnit.MILLISECONDS.convert(maxTimeout.value, maxTimeout.unit);
-        int wheelNumber = 0;
-        long timePerWheel = FIRST_WHEEL_SIZE * this.tickDurationInMillis;
-        while(maxTimeoutInMillis > 0) {
-            maxTimeoutInMillis -= timePerWheel * Math.pow(OTHER_WHEEL_SIZE, wheelNumber++);
-        }
 
+        int wheelNumber = computeWheelsNumber(maxTimeoutInMillis);
         wheels = new ArrayList<>(wheelNumber);
+        createWheels(wheelNumber);
+    }
+
+    private void createWheels(int wheelNumber) {
         wheels.add(new Wheel(FIRST_WHEEL_SIZE));
         for (int i = 1; i < wheelNumber; i++) {
             wheels.add(new Wheel(OTHER_WHEEL_SIZE));
         }
     }
 
+    private int computeWheelsNumber(long maxTimeoutInMillis) {
+        int wheelNumber = 0;
+        long timePerWheel = FIRST_WHEEL_SIZE * this.tickDurationInMillis;
+        while(maxTimeoutInMillis > 0) {
+            maxTimeoutInMillis -= timePerWheel * Math.pow(OTHER_WHEEL_SIZE, wheelNumber++);
+        }
+        return wheelNumber;
+    }
+
     public void start() {
-        service.scheduleAtFixedRate(new Runnable() {
+        ScheduledService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 tick();
@@ -84,10 +93,10 @@ public class WheelTimer {
                     if (timeoutItem.getTimeout().value == 0) {
                         timeoutItem.item.timeout();
                     }
-                add(timeoutItem);
+                    add(timeoutItem);
                 }
             }
         }
     }
 
- }
+}

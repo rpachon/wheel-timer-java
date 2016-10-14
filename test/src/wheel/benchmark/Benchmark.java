@@ -18,7 +18,7 @@ public class Benchmark implements JLBHTask {
     public static final int WARMUP_ITERATION = 10;
     public static final int THROUGHPUT = 100_000;
     public static final int SECOND_NUMBER = 10;
-    public static final int RUNS = 1;
+    public static final int RUNS = 5;
     private WheelTimer timer;
     private Timeout timeout;
     JLBH jlbh;
@@ -38,14 +38,14 @@ public class Benchmark implements JLBHTask {
     @Override
     public void init(JLBH jlbh) {
         this.jlbh = jlbh;
-        timer = new WheelTimer(new Timeout(1, TimeUnit.MILLISECONDS), new Timeout(50, TimeUnit.MILLISECONDS));
+        timer = new WheelTimer(new Timeout(1, TimeUnit.MILLISECONDS), new Timeout(2000, TimeUnit.MILLISECONDS));
         timer.start();
-        timeout = new Timeout(10, TimeUnit.MILLISECONDS);
+        timeout = new Timeout(1000, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void run(long startTimeNS) {
-        TimeoutItem item = new TimeoutItem(new Item(startTimeNS), timeout);
+        TimeoutItem item = new TimeoutItem(new Item(System.nanoTime()), timeout);
         timer.add(item);
     }
 

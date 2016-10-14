@@ -1,10 +1,5 @@
 package wheel.util;
 
-import java.sql.Time;
-
-/**
- * Created by stan on 11/10/16.
- */
 public class TimeoutItem {
 
     public final TimeOutable item;

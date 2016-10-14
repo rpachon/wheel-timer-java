@@ -2,16 +2,17 @@ package wheel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Created by stan on 08/10/16.
- */
 public class Wheel<T> {
     protected final int lenght;
     private final List<T>[] wheel;
 
-    private int index = 0;
+    private AtomicInteger index = new AtomicInteger(0);
     private boolean cascade;
+
+    private ReentrantLock lock = new ReentrantLock(true);
 
     public Wheel(int lenght) {
         this.lenght = lenght;
@@ -25,17 +26,28 @@ public class Wheel<T> {
     }
 
     public void add(T item, int bucket) {
-        wheel[(bucket+index)%lenght].add(item);
+        try {
+            lock.lock();
+            wheel[(bucket+index.get())%lenght].add(item);
+        } finally {
+            lock.unlock();
+        }
     }
 
     public List<T> nextBucket() {
         cascade = false;
-        if (++index == lenght) {
-            index = 0;
+        if (index.incrementAndGet() == lenght) {
+            index.set(0);
             cascade = true;
         }
-        List<T> result = new ArrayList<T>(wheel[index]);
-        wheel[index].clear();
+        List<T> result;
+        try {
+            lock.lock();
+            result = new ArrayList<T>(wheel[index.get()]);
+            wheel[index.get()].clear();
+        } finally {
+            lock.unlock();
+        }
         return result;
     }
 
