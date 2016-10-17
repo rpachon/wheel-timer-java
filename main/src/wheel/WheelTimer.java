@@ -5,8 +5,8 @@ import wheel.util.TimeoutItem;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 
@@ -18,7 +18,6 @@ public class WheelTimer {
     private final List<Wheel<TimeoutItem>> wheels;
     private final long tickDurationInMillis;
 
-    private final ScheduledExecutorService ScheduledService = Executors.newSingleThreadScheduledExecutor();
 
     public WheelTimer(Timeout tickDuration, Timeout maxTimeout) {
         this.tickDurationInMillis = TimeUnit.MILLISECONDS.convert(tickDuration.value, tickDuration.unit);
@@ -46,12 +45,13 @@ public class WheelTimer {
     }
 
     public void start() {
-        ScheduledService.scheduleAtFixedRate(new Runnable() {
+        Timer timer = new Timer("timer", true);
+        timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 tick();
             }
-        }, tickDurationInMillis, tickDurationInMillis, TimeUnit.MILLISECONDS);
+        }, 0, tickDurationInMillis);
     }
 
     public void  add(TimeoutItem timeoutItem) {

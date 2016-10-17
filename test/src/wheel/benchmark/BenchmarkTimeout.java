@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by stan on 13/10/16.
  */
-public class Benchmark implements JLBHTask {
+public class BenchmarkTimeout implements JLBHTask {
 
     public static final int WARMUP_ITERATION = 10;
     public static final int THROUGHPUT = 1_000_000;
@@ -31,16 +31,17 @@ public class Benchmark implements JLBHTask {
                 .runs(RUNS)
                 .recordOSJitter(true)
                 .accountForCoordinatedOmmission(true)
-                .jlbhTask(new Benchmark());
+                .jlbhTask(new BenchmarkTimeout());
         new JLBH(lth).start();
     }
 
     @Override
     public void init(JLBH jlbh) {
         this.jlbh = jlbh;
-        timer = new WheelTimer(new Timeout(10, TimeUnit.MILLISECONDS), new Timeout(2000, TimeUnit.MILLISECONDS));
+        timer = new WheelTimer(new Timeout(5, TimeUnit.MILLISECONDS),
+                new Timeout(2, TimeUnit.SECONDS));
         timer.start();
-        timeout = new Timeout(1000, TimeUnit.MILLISECONDS);
+        timeout = new Timeout(1, TimeUnit.SECONDS);
     }
 
     @Override
