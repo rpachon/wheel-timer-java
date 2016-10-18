@@ -9,8 +9,8 @@ public class Wheel<T> {
     protected final int lenght;
     private final List<T>[] wheel;
 
-    private AtomicInteger index = new AtomicInteger(0);
-    private boolean cascade;
+    private volatile AtomicInteger index = new AtomicInteger(0);
+    private volatile boolean cascade;
 
     private ReentrantLock lock = new ReentrantLock(true);
 
