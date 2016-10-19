@@ -9,7 +9,7 @@ public class Wheel<T> {
     protected final int lenght;
     private final List<T>[] wheel;
 
-    private AtomicInteger index = new AtomicInteger(0);
+    private final AtomicInteger index = new AtomicInteger(0);
     private boolean cascade;
 
     private ReentrantLock lock = new ReentrantLock(true);
