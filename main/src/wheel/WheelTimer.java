@@ -17,7 +17,7 @@ public class WheelTimer {
 
     private final List<Wheel<TimeoutItem>> wheels;
     private final long tickDurationInMillis;
-
+    private final Timer timer = new Timer(true);
 
     public WheelTimer(Timeout tickDuration, Timeout maxTimeout) {
         this.tickDurationInMillis = TimeUnit.MILLISECONDS.convert(tickDuration.value, tickDuration.unit);
@@ -45,7 +45,6 @@ public class WheelTimer {
     }
 
     public void start() {
-        Timer timer = new Timer("timer", true);
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -80,23 +79,15 @@ public class WheelTimer {
         }
     }
 
-    private void cascade(List<TimeoutItem> timeoutItems, int i) {
-        if (i == 0) {
-            for (TimeoutItem timeoutItem : timeoutItems) {
-                if (timeoutItem.item.isRunning()) {
+    private void cascade(List<TimeoutItem> timeoutItems, int wheelNumber) {
+        for (TimeoutItem timeoutItem : timeoutItems) {
+            if (timeoutItem.item.isRunning()) {
+                if (timeoutItem.getTimeout().value == 0 || wheelNumber == 0) {
                     timeoutItem.item.timeout();
-                }
-            }
-        } else {
-            for (TimeoutItem timeoutItem : timeoutItems) {
-                if (timeoutItem.item.isRunning()) {
-                    if (timeoutItem.getTimeout().value == 0) {
-                        timeoutItem.item.timeout();
-                    }
+                } else {
                     add(timeoutItem);
                 }
             }
         }
     }
-
 }
