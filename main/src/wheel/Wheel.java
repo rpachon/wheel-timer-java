@@ -55,4 +55,8 @@ public class Wheel<T> {
         return cascade;
     }
 
+    public int remainingTick() {
+        int currentIndex = index.get();
+        return lenght-currentIndex;
+    }
 }

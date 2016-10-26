@@ -57,14 +57,15 @@ public class WheelTimer {
         long timeoutValueInMillis = TimeUnit.MILLISECONDS.convert(timeoutItem.getTimeout().value, timeoutItem.getTimeout().unit);
         long currentWheelTime = FIRST_WHEEL_SIZE * tickDurationInMillis;
         long bucketDuration = tickDurationInMillis;
-
+        timeoutValueInMillis -= bucketDuration;
         for (int i = 0; i < wheels.size(); i++) {
-            if (timeoutValueInMillis <= currentWheelTime) {
+            if (timeoutValueInMillis < currentWheelTime) {
                 int bucket = (int) (timeoutValueInMillis / bucketDuration);
-                timeoutItem.updateTimeout(new Timeout(timeoutValueInMillis-bucket*bucketDuration, TimeUnit.MILLISECONDS));
-                wheels.get(i).add(timeoutItem, bucket);
+                timeoutItem.updateTimeout(new Timeout(timeoutValueInMillis - (bucket * bucketDuration), TimeUnit.MILLISECONDS));
+                wheels.get(i).add(timeoutItem, bucket + 1);
                 break;
             }
+            timeoutValueInMillis -= (wheels.get(i).remainingTick()-1) * bucketDuration;
             bucketDuration = currentWheelTime;
             currentWheelTime *= OTHER_WHEEL_SIZE;
         }
@@ -72,17 +73,17 @@ public class WheelTimer {
 
     protected void tick() {
         for (int i = 0; i < wheels.size(); i++) {
-            cascade(wheels.get(i).nextBucket(), i);
+            cascade(wheels.get(i).nextBucket());
             if (!wheels.get(i).cascade()) {
                 break;
             }
         }
     }
 
-    private void cascade(List<TimeoutItem> timeoutItems, int wheelNumber) {
+    private void cascade(List<TimeoutItem> timeoutItems) {
         for (TimeoutItem timeoutItem : timeoutItems) {
             if (timeoutItem.item.isRunning()) {
-                if (timeoutItem.getTimeout().value == 0 || wheelNumber == 0) {
+                if (timeoutItem.getTimeout().value == 0) {
                     timeoutItem.item.timeout();
                 } else {
                     add(timeoutItem);

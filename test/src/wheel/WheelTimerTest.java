@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static wheel.TestUtil.getWheelsList;
 import static wheel.TestUtil.goForwardFrom;
@@ -242,6 +243,55 @@ public class WheelTimerTest {
                 verify(timeOutable).timeout();
             }
         }
+    }
+
+    @Test
+    @DataProvider( value={
+            "1",
+            "2",
+            "10",
+            "125",
+            "256",
+            "257",
+            "16000",
+            "16384",
+            "16640",
+            "16641",
+            "100000",
+            "120000",
+            "1048570"
+    })
+    public void should_timeout_all_items_with_specific_number_of_tick_and_wheels_are_already_running(long value) throws NoSuchFieldException, IllegalAccessException {
+        // Given
+        Timeout tickDuration = new Timeout(1, TimeUnit.MILLISECONDS);
+        Timeout maxTimeout = new Timeout(500_000, TimeUnit.MILLISECONDS);
+        WheelTimer timer = new WheelTimer(tickDuration, maxTimeout);
+        List<Wheel<TimeoutItem>> wheels = getWheelsList(timer);
+        goForwardFrom(wheels.get(0), 200);
+        goForwardFrom(wheels.get(1), 50);
+        goForwardFrom(wheels.get(2), 2);
+
+
+        TimeOutable timeOutable = mock(TimeOutable.class);
+        given(timeOutable.isRunning()).willReturn(true);
+        TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(value, TimeUnit.MILLISECONDS));
+        timer.add(item);
+
+
+        // When
+        for (int i=0; i<value-1; i++) {
+            timer.tick();
+        }
+
+        // Then
+        verify(timeOutable, never()).timeout();
+
+        // When
+        timer.tick();
+
+        // Then
+        verify(timeOutable).timeout();
+
     }
 
 
