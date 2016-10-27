@@ -9,10 +9,8 @@ public class Wheel<T> {
     protected final int lenght;
     private final List<T>[] wheel;
 
-    private final AtomicInteger index = new AtomicInteger(0);
+    private int index = 0;
     private boolean cascade;
-
-    private ReentrantLock lock = new ReentrantLock(true);
 
     public Wheel(int lenght) {
         this.lenght = lenght;
@@ -26,28 +24,17 @@ public class Wheel<T> {
     }
 
     public void add(T item, int bucket) {
-        try {
-            lock.lock();
-            wheel[(bucket+index.get())%lenght].add(item);
-        } finally {
-            lock.unlock();
-        }
+        wheel[(bucket+index)%lenght].add(item);
     }
 
     public List<T> nextBucket() {
         cascade = false;
-        if (index.incrementAndGet() == lenght) {
-            index.set(0);
+        if (++index == lenght) {
+            index = 0;
             cascade = true;
         }
-        List<T> result;
-        try {
-            lock.lock();
-            result = new ArrayList<T>(wheel[index.get()]);
-            wheel[index.get()].clear();
-        } finally {
-            lock.unlock();
-        }
+        List<T> result = new ArrayList<T>(wheel[index]);
+        wheel[index].clear();
         return result;
     }
 
@@ -56,7 +43,6 @@ public class Wheel<T> {
     }
 
     public int remainingTick() {
-        int currentIndex = index.get();
-        return lenght-currentIndex;
+        return lenght-index;
     }
 }

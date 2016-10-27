@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public class WheelTimer {
@@ -18,6 +19,9 @@ public class WheelTimer {
     private final List<Wheel<TimeoutItem>> wheels;
     private final long tickDurationInMillis;
     private final Timer timer = new Timer(true);
+
+    private ReentrantLock lock = new ReentrantLock(true);
+
 
     public WheelTimer(Timeout tickDuration, Timeout maxTimeout) {
         this.tickDurationInMillis = TimeUnit.MILLISECONDS.convert(tickDuration.value, tickDuration.unit);
@@ -54,6 +58,15 @@ public class WheelTimer {
     }
 
     public void  add(TimeoutItem timeoutItem) {
+        try {
+            lock.lock();
+            computeAndAdd(timeoutItem);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void  computeAndAdd(TimeoutItem timeoutItem) {
         long timeoutValueInMillis = TimeUnit.MILLISECONDS.convert(timeoutItem.getTimeout().value, timeoutItem.getTimeout().unit);
         long currentWheelTime = FIRST_WHEEL_SIZE * tickDurationInMillis;
         long bucketDuration = tickDurationInMillis;
@@ -72,11 +85,16 @@ public class WheelTimer {
     }
 
     protected void tick() {
-        for (int i = 0; i < wheels.size(); i++) {
-            cascade(wheels.get(i).nextBucket());
-            if (!wheels.get(i).cascade()) {
-                break;
+        try {
+            lock.lock();
+            for (int i = 0; i < wheels.size(); i++) {
+                cascade(wheels.get(i).nextBucket());
+                if (!wheels.get(i).cascade()) {
+                    break;
+                }
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -86,7 +104,7 @@ public class WheelTimer {
                 if (timeoutItem.getTimeout().value == 0) {
                     timeoutItem.item.timeout();
                 } else {
-                    add(timeoutItem);
+                    computeAndAdd(timeoutItem);
                 }
             }
         }

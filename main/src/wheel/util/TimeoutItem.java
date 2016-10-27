@@ -3,7 +3,7 @@ package wheel.util;
 public class TimeoutItem {
 
     public final TimeOutable item;
-    private volatile Timeout timeout;
+    private Timeout timeout;
 
 
     public TimeoutItem(TimeOutable item, Timeout timeout) {
