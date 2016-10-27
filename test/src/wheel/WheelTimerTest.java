@@ -1,9 +1,7 @@
 package wheel;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import wheel.util.TimeOutable;
@@ -15,9 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static wheel.TestUtil.getWheelsList;
 import static wheel.TestUtil.goForwardFrom;
 
@@ -233,16 +229,19 @@ public class WheelTimerTest {
         TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(Long.valueOf(timeout), TimeUnit.MILLISECONDS));
         timer.add(item);
 
-
-        for (int i=1; i<1064965; i++) {
-            // When
+        // When
+        for (int i=0; i<timeout-1; i++) {
             timer.tick();
-
-            // Then
-            if (i == timeout) {
-                verify(timeOutable).timeout();
-            }
         }
+
+        // Then
+        verify(timeOutable, never()).timeout();
+
+        // When
+        timer.tick();
+
+        // Then
+        verify(timeOutable).timeout();
     }
 
     @Test
@@ -261,7 +260,7 @@ public class WheelTimerTest {
             "120000",
             "1048570"
     })
-    public void should_timeout_all_items_with_specific_number_of_tick_and_wheels_are_already_running(long value) throws NoSuchFieldException, IllegalAccessException {
+    public void should_timeout_all_items_with_specific_number_of_tick_and_wheels_are_already_running(long timeout) throws NoSuchFieldException, IllegalAccessException {
         // Given
         Timeout tickDuration = new Timeout(1, TimeUnit.MILLISECONDS);
         Timeout maxTimeout = new Timeout(500_000, TimeUnit.MILLISECONDS);
@@ -274,12 +273,12 @@ public class WheelTimerTest {
 
         TimeOutable timeOutable = mock(TimeOutable.class);
         given(timeOutable.isRunning()).willReturn(true);
-        TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(value, TimeUnit.MILLISECONDS));
+        TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(timeout, TimeUnit.MILLISECONDS));
         timer.add(item);
 
 
         // When
-        for (int i=0; i<value-1; i++) {
+        for (int i=0; i<timeout-1; i++) {
             timer.tick();
         }
 
@@ -292,33 +291,5 @@ public class WheelTimerTest {
         // Then
         verify(timeOutable).timeout();
 
-    }
-
-
-    //Really long test
-    @Ignore
-    @Test
-    public void should_timeout_all_items() {
-        // Given
-        Timeout tickDuration = new Timeout(1, TimeUnit.MILLISECONDS);
-        Timeout maxTimeout = new Timeout(500_000, TimeUnit.MILLISECONDS);
-        WheelTimer timer = new WheelTimer(tickDuration, maxTimeout);
-        TimeOutable[] listTimeoutable = new TimeOutable[500_000];
-        for (int i=1; i<500000; i++) {
-            TimeOutable timeOutable = mock(TimeOutable.class);
-            given(timeOutable.isRunning()).willReturn(true);
-            listTimeoutable[i] = timeOutable;
-            TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(i, TimeUnit.MILLISECONDS));
-            timer.add(item);
-        }
-
-        for (int i=1; i<500000; i++) {
-
-            // When
-            timer.tick();
-
-            // Then
-            verify(listTimeoutable[i]).timeout();
-        }
     }
 }
