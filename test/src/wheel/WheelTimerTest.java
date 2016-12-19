@@ -2,12 +2,15 @@ package wheel;
 
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import wheel.util.TimeOutable;
 import wheel.util.Timeout;
 import wheel.util.TimeoutItem;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +25,15 @@ import static wheel.TestUtil.goForwardFrom;
  */
 @RunWith(DataProviderRunner.class)
 public class WheelTimerTest {
+
+
+    private Method tick;
+
+    @Before
+    public void setUp() throws NoSuchMethodException {
+        tick = WheelTimer.class.getDeclaredMethod("tick");
+        tick.setAccessible(true);
+    }
 
 
     @Test
@@ -73,7 +85,6 @@ public class WheelTimerTest {
     @DataProvider( value={
             "257|1",
             "16000|62",
-            "16384|64",
             "16384|64"
     }, splitBy = "\\|", trimValues = true)
     public void should_add_an_item_in_the_second_wheel_when_timeout_between_257_and_16384_multiply_tick_duration(long timeout, int bucket) throws NoSuchFieldException, IllegalAccessException {
@@ -219,7 +230,7 @@ public class WheelTimerTest {
             "100000",
             "120000"
     })
-    public void should_cascade_bucket_if_not_in_the_first_wheel(int timeout) {
+    public void should_cascade_bucket_if_not_in_the_first_wheel(int timeout) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Given
         Timeout tickDuration = new Timeout(1, TimeUnit.MILLISECONDS);
         Timeout maxTimeout = new Timeout(120_000, TimeUnit.MILLISECONDS);
@@ -231,14 +242,14 @@ public class WheelTimerTest {
 
         // When
         for (int i=0; i<timeout-1; i++) {
-            timer.tick();
+            tick.invoke(timer);
         }
 
         // Then
         verify(timeOutable, never()).timeout();
 
         // When
-        timer.tick();
+        tick.invoke(timer);
 
         // Then
         verify(timeOutable).timeout();
@@ -260,7 +271,7 @@ public class WheelTimerTest {
             "120000",
             "1048570"
     })
-    public void should_timeout_all_items_with_specific_number_of_tick_and_wheels_are_already_running(long timeout) throws NoSuchFieldException, IllegalAccessException {
+    public void should_timeout_all_items_with_specific_number_of_tick_and_wheels_are_already_running(long timeout) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         // Given
         Timeout tickDuration = new Timeout(1, TimeUnit.MILLISECONDS);
         Timeout maxTimeout = new Timeout(500_000, TimeUnit.MILLISECONDS);
@@ -279,14 +290,14 @@ public class WheelTimerTest {
 
         // When
         for (int i=0; i<timeout-1; i++) {
-            timer.tick();
+            tick.invoke(timer);
         }
 
         // Then
         verify(timeOutable, never()).timeout();
 
         // When
-        timer.tick();
+        tick.invoke(timer);
 
         // Then
         verify(timeOutable).timeout();

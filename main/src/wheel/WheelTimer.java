@@ -84,7 +84,7 @@ public class WheelTimer {
         }
     }
 
-    protected void tick() {
+    private void tick() {
         try {
             lock.lock();
             for (int i = 0; i < wheels.size(); i++) {
