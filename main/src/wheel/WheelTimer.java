@@ -101,7 +101,7 @@ public class WheelTimer {
     private void cascade(List<TimeoutItem> timeoutItems) {
         for (TimeoutItem timeoutItem : timeoutItems) {
             if (timeoutItem.item.isRunning()) {
-                if (timeoutItem.getTimeout().value == 0) {
+                if (timeoutItem.getTimeout().value < tickDurationInMillis) {
                     timeoutItem.item.timeout();
                 } else {
                     computeAndAdd(timeoutItem);

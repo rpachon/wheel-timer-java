@@ -303,4 +303,35 @@ public class WheelTimerTest {
         verify(timeOutable).timeout();
 
     }
+
+    @Test
+    public void should_timeout_when_between_two_ticks() throws InvocationTargetException, IllegalAccessException {
+        // Given
+        Timeout tickDuration = new Timeout(30, TimeUnit.MILLISECONDS);
+        Timeout maxTimeout = new Timeout(5, TimeUnit.MINUTES);
+        WheelTimer timer = new WheelTimer(tickDuration, maxTimeout);
+
+
+        TimeOutable timeOutable = mock(TimeOutable.class);
+        given(timeOutable.isRunning()).willReturn(true);
+        TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(75, TimeUnit.MILLISECONDS));
+        timer.add(item);
+
+
+        // When
+        for (int i=0; i<1; i++) {
+            tick.invoke(timer);
+        }
+
+        // Then
+        verify(timeOutable, never()).timeout();
+
+        // When
+        tick.invoke(timer);
+
+        // Then
+        verify(timeOutable).timeout();
+
+    }
+
 }
