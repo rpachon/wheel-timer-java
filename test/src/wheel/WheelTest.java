@@ -10,10 +10,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Created by stan on 08/10/16.
- */
-
 @RunWith(DataProviderRunner.class)
 public class WheelTest {
 

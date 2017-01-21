@@ -10,9 +10,6 @@ import wheel.util.TimeoutItem;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by stan on 13/10/16.
- */
 public class BenchmarkTimeout implements JLBHTask {
 
     public static final int WARMUP_ITERATION = 10;

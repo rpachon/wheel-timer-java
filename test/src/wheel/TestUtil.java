@@ -5,9 +5,6 @@ import wheel.util.TimeoutItem;
 import java.lang.reflect.Field;
 import java.util.List;
 
-/**
- * Created by stan on 11/10/16.
- */
 public class TestUtil {
 
     public static void goForwardFrom(Wheel wheel, int tickNumbers) {

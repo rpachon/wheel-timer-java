@@ -20,9 +20,6 @@ import static org.mockito.Mockito.*;
 import static wheel.TestUtil.getWheelsList;
 import static wheel.TestUtil.goForwardFrom;
 
-/**
- * Created by stan on 10/10/16.
- */
 @RunWith(DataProviderRunner.class)
 public class WheelTimerTest {
 
