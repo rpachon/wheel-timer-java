@@ -2,7 +2,7 @@ package wheel.util;
 
 public class TimeoutItem {
 
-    public final TimeOutable item;
+    private final TimeOutable item;
     private Timeout timeout;
 
 
@@ -13,6 +13,10 @@ public class TimeoutItem {
 
     public void updateTimeout(Timeout newTimeout) {
         timeout = newTimeout;
+    }
+
+    public TimeOutable getItem() {
+        return item;
     }
 
     public Timeout getTimeout() {

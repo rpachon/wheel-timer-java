@@ -24,8 +24,8 @@ public class WheelTimer {
 
 
     public WheelTimer(Timeout tickDuration, Timeout maxTimeout) {
-        this.tickDurationInMillis = TimeUnit.MILLISECONDS.convert(tickDuration.value, tickDuration.unit);
-        long maxTimeoutInMillis = TimeUnit.MILLISECONDS.convert(maxTimeout.value, maxTimeout.unit);
+        this.tickDurationInMillis = TimeUnit.MILLISECONDS.convert(tickDuration.getValue(), tickDuration.getUnit());
+        long maxTimeoutInMillis = TimeUnit.MILLISECONDS.convert(maxTimeout.getValue(), maxTimeout.getUnit());
 
         int wheelNumber = computeWheelsNumber(maxTimeoutInMillis);
         wheels = new ArrayList<>(wheelNumber);
@@ -67,7 +67,7 @@ public class WheelTimer {
     }
 
     private void  computeAndAdd(TimeoutItem timeoutItem) {
-        long timeoutValueInMillis = TimeUnit.MILLISECONDS.convert(timeoutItem.getTimeout().value, timeoutItem.getTimeout().unit);
+        long timeoutValueInMillis = TimeUnit.MILLISECONDS.convert(timeoutItem.getTimeout().getValue(), timeoutItem.getTimeout().getUnit());
         long currentWheelTime = FIRST_WHEEL_SIZE * tickDurationInMillis;
         long bucketDuration = tickDurationInMillis;
         timeoutValueInMillis -= bucketDuration;
@@ -100,9 +100,9 @@ public class WheelTimer {
 
     private void cascade(List<TimeoutItem> timeoutItems) {
         for (TimeoutItem timeoutItem : timeoutItems) {
-            if (timeoutItem.item.isRunning()) {
-                if (timeoutItem.getTimeout().value < tickDurationInMillis) {
-                    timeoutItem.item.timeout();
+            if (timeoutItem.getItem().isRunning()) {
+                if (timeoutItem.getTimeout().getValue() < tickDurationInMillis) {
+                    timeoutItem.getItem().timeout();
                 } else {
                     computeAndAdd(timeoutItem);
                 }
