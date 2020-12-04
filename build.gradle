@@ -14,11 +14,10 @@ repositories {
 }
 
 dependencies {
-    compile "net.openhft:chronicle-core:1.7.6"
-    compile "net.openhft:chronicle:1.7.6"
-    compile "net.openhft:affinity:3.0.4"
+    testCompile "net.openhft:jlbh:1.+"
+    testCompile "net.openhft:affinity:3.+"
     testCompile "junit:junit:4.12"
     testCompile group: 'com.tngtech.java', name: 'junit-dataprovider', version: '1.10.0'
-    testCompile 'org.assertj:assertj-core:2.4.1'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '1.9.+'
+    testCompile 'org.assertj:assertj-core:2.+'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.+'
 }
