@@ -22,14 +22,13 @@ public class BenchmarkTimeout implements JLBHTask {
     private long max = Long.MIN_VALUE;
 
     public static void main(String[] args) {
-
         JLBHOptions lth = new JLBHOptions()
                 .warmUpIterations(WARMUP_ITERATION)
-                .iterations(THROUGHPUT*SECOND_NUMBER)
+                .iterations(THROUGHPUT * SECOND_NUMBER)
                 .throughput(THROUGHPUT)
                 .runs(RUNS)
-                .recordOSJitter(true)
-                .accountForCoordinatedOmmission(true)
+                .recordOSJitter(false)
+                .accountForCoordinatedOmmission(false)
                 .jitterAffinity(true)
                 .jlbhTask(new BenchmarkTimeout());
         new JLBH(lth).start();
@@ -38,13 +37,13 @@ public class BenchmarkTimeout implements JLBHTask {
     @Override
     public void init(JLBH jlbh) {
         this.jlbh = jlbh;
-        timer = new WheelTimer(Duration.ofMillis(10), Duration.ofSeconds(5));
+        timer = new WheelTimer(System::currentTimeMillis, Duration.ofMillis(1), Duration.ofSeconds(2));
         timer.start();
     }
 
     @Override
     public void run(long startTimeNS) {
-        TimeoutItem item = new TimeoutItem(new Item(startTimeNS), Duration.ofSeconds(5));
+        TimeoutItem item = new TimeoutItem(System::currentTimeMillis, new Item(startTimeNS), Duration.ofSeconds(2));
         timer.add(item);
     }
 

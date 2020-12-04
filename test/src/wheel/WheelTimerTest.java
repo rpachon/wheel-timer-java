@@ -2,6 +2,7 @@ package wheel;
 
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,22 +44,22 @@ public class WheelTimerTest {
             "120000",
             "1048570"
     })
-    public void should_timeout_all_items_with_tick_duration_at_one_ms(long timeout) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+    public void should_timeout_all_items_with_tick_duration_at_one_ms(long timeout) throws IllegalAccessException, InvocationTargetException {
         // Given
         Duration tickDuration = Duration.ofMillis(1);
         Duration maxTimeout = Duration.ofMinutes(18);
-        WheelTimer timer = new WheelTimer(tickDuration, maxTimeout);
-        for (int i = 0; i < 1000000; ++i) {
-            tick.invoke(timer);
-        }
+
+        ClockMock clock = new ClockMock(tickDuration);
+        WheelTimer timer = givenAWheelTimer(clock, tickDuration, maxTimeout);
 
         TimeOutable timeOutable = mock(TimeOutable.class);
         given(timeOutable.isRunning()).willReturn(true);
-        TimeoutItem item = new TimeoutItem(timeOutable, Duration.ofMillis(timeout));
+        TimeoutItem item = new TimeoutItem(clock, timeOutable, Duration.ofMillis(timeout));
         timer.add(item);
 
         // When
-        for (int i=0; i<timeout-1; i++) {
+        for (int i = 0; i < timeout - 1; i++) {
+            clock.tick();
             tick.invoke(timer);
         }
 
@@ -66,6 +67,7 @@ public class WheelTimerTest {
         verify(timeOutable, never()).timeout();
 
         // When
+        clock.tick();
         tick.invoke(timer);
 
         // Then
@@ -73,8 +75,17 @@ public class WheelTimerTest {
 
     }
 
+    @NotNull
+    private WheelTimer givenAWheelTimer(ClockMock clock, Duration tickDuration, Duration maxTimeout) throws IllegalAccessException, InvocationTargetException {
+        WheelTimer timer = new WheelTimer(clock, tickDuration, maxTimeout);
+        for (int i = 0; i < 1000000; ++i) {
+            tick.invoke(timer);
+        }
+        return timer;
+    }
+
     @Test
-    @DataProvider( value={
+    @DataProvider(value = {
             "32, 1",
             "75, 2",
             "7680, 256",
@@ -86,15 +97,17 @@ public class WheelTimerTest {
         // Given
         Duration tickDuration = Duration.ofMillis(30);
         Duration maxTimeout = Duration.ofMinutes(5);
-        WheelTimer timer = new WheelTimer(tickDuration, maxTimeout);
+        ClockMock clock = new ClockMock(tickDuration);
+        WheelTimer timer = givenAWheelTimer(clock, tickDuration, maxTimeout);
 
         TimeOutable timeOutable = mock(TimeOutable.class);
-        given(timeOutable.isRunning()).willReturn(true);
-        TimeoutItem item = new TimeoutItem(timeOutable, Duration.ofMillis(timeout));
+
+        TimeoutItem item = givenATimeoutableItem(timeout, timeOutable, clock);
         timer.add(item);
 
         // When
         for (int i = 0; i < numberOfTick - 1; i++) {
+            clock.tick();
             tick.invoke(timer);
         }
 
@@ -102,10 +115,18 @@ public class WheelTimerTest {
         verify(timeOutable, never()).timeout();
 
         // When
+        clock.tick();
         tick.invoke(timer);
 
         // Then
         verify(timeOutable).timeout();
+    }
+
+    @NotNull
+    private TimeoutItem givenATimeoutableItem(long timeout, TimeOutable timeOutable, ClockMock clock) {
+        given(timeOutable.isRunning()).willReturn(true);
+        TimeoutItem item = new TimeoutItem(clock, timeOutable, Duration.ofMillis(timeout));
+        return item;
     }
 
 }
