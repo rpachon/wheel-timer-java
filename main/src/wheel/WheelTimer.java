@@ -1,17 +1,16 @@
 package wheel;
 
-import wheel.util.Timeout;
 import wheel.util.TimeoutItem;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.StampedLock;
 
 
-public class WheelTimer {
+public final class WheelTimer {
 
     private final int FIRST_WHEEL_SIZE = 256;
     private final int OTHER_WHEEL_SIZE = 64;
@@ -20,12 +19,12 @@ public class WheelTimer {
     private final long tickDurationInMillis;
     private final Timer timer = new Timer(true);
 
-    private ReentrantLock lock = new ReentrantLock(true);
+    private final StampedLock lock = new StampedLock();
 
 
-    public WheelTimer(Timeout tickDuration, Timeout maxTimeout) {
-        this.tickDurationInMillis = TimeUnit.MILLISECONDS.convert(tickDuration.getValue(), tickDuration.getUnit());
-        long maxTimeoutInMillis = TimeUnit.MILLISECONDS.convert(maxTimeout.getValue(), maxTimeout.getUnit());
+    public WheelTimer(Duration tickDuration, Duration maxTimeout) {
+        this.tickDurationInMillis = tickDuration.toMillis();
+        long maxTimeoutInMillis = maxTimeout.toMillis();
 
         int wheelNumber = computeWheelsNumber(maxTimeoutInMillis);
         wheels = new ArrayList<>(wheelNumber);
@@ -33,9 +32,11 @@ public class WheelTimer {
     }
 
     private void createWheels(int wheelNumber) {
-        wheels.add(new Wheel(FIRST_WHEEL_SIZE));
+        wheels.add(new Wheel(FIRST_WHEEL_SIZE, tickDurationInMillis));
+        long tickDuration = tickDurationInMillis * FIRST_WHEEL_SIZE;
         for (int i = 1; i < wheelNumber; i++) {
-            wheels.add(new Wheel(OTHER_WHEEL_SIZE));
+            wheels.add(new Wheel(OTHER_WHEEL_SIZE, tickDuration));
+            tickDuration *= OTHER_WHEEL_SIZE;
         }
     }
 
@@ -58,35 +59,32 @@ public class WheelTimer {
     }
 
     public void  add(TimeoutItem timeoutItem) {
+        long stamp = lock.writeLock();
         try {
-            lock.lock();
             computeAndAdd(timeoutItem);
         } finally {
-            lock.unlock();
+            lock.unlockWrite(stamp);
         }
     }
 
     private void  computeAndAdd(TimeoutItem timeoutItem) {
-        long timeoutValueInMillis = TimeUnit.MILLISECONDS.convert(timeoutItem.getTimeout().getValue(), timeoutItem.getTimeout().getUnit());
-        long currentWheelTime = FIRST_WHEEL_SIZE * tickDurationInMillis;
-        long bucketDuration = tickDurationInMillis;
-        timeoutValueInMillis -= bucketDuration;
+        long timeoutValueInMillis = timeoutItem.getTimeoutInMillis();
+        timeoutValueInMillis -= wheels.get(0).getBucketTime();
         for (int i = 0; i < wheels.size(); i++) {
-            if (timeoutValueInMillis < currentWheelTime) {
-                int bucket = (int) (timeoutValueInMillis / bucketDuration);
-                timeoutItem.updateTimeout(new Timeout(timeoutValueInMillis - (bucket * bucketDuration), TimeUnit.MILLISECONDS));
+            long bucketTime = wheels.get(i).getBucketTime();
+            if (timeoutValueInMillis < wheels.get(i).getMaxTimeout()) {
+                int bucket = (int) (timeoutValueInMillis / bucketTime);
+                timeoutItem.updateTimeout(timeoutValueInMillis - (bucket * bucketTime));
                 wheels.get(i).add(timeoutItem, bucket + 1);
                 break;
             }
-            timeoutValueInMillis -= (wheels.get(i).remainingTick()-1) * bucketDuration;
-            bucketDuration = currentWheelTime;
-            currentWheelTime *= OTHER_WHEEL_SIZE;
+            timeoutValueInMillis -= (wheels.get(i).remainingTick() - 1) * bucketTime;
         }
     }
 
     private void tick() {
+        long stamp = lock.writeLock();
         try {
-            lock.lock();
             for (int i = 0; i < wheels.size(); i++) {
                 cascade(wheels.get(i).nextBucket());
                 if (!wheels.get(i).cascade()) {
@@ -94,14 +92,14 @@ public class WheelTimer {
                 }
             }
         } finally {
-            lock.unlock();
+            lock.unlockWrite(stamp);
         }
     }
 
     private void cascade(List<TimeoutItem> timeoutItems) {
         for (TimeoutItem timeoutItem : timeoutItems) {
             if (timeoutItem.getItem().isRunning()) {
-                if (timeoutItem.getTimeout().getValue() < tickDurationInMillis) {
+                if (timeoutItem.getTimeoutInMillis() < tickDurationInMillis) {
                     timeoutItem.getItem().timeout();
                 } else {
                     computeAndAdd(timeoutItem);

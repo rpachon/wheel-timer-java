@@ -6,12 +6,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import wheel.util.TimeOutable;
-import wheel.util.Timeout;
 import wheel.util.TimeoutItem;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -46,16 +45,16 @@ public class WheelTimerTest {
     })
     public void should_timeout_all_items_with_tick_duration_at_one_ms(long timeout) throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
         // Given
-        Timeout tickDuration = new Timeout(1, TimeUnit.MILLISECONDS);
-        Timeout maxTimeout = new Timeout(18, TimeUnit.MINUTES);
+        Duration tickDuration = Duration.ofMillis(1);
+        Duration maxTimeout = Duration.ofMinutes(18);
         WheelTimer timer = new WheelTimer(tickDuration, maxTimeout);
-        for (int i=0; i<1000000; ++i) {
+        for (int i = 0; i < 1000000; ++i) {
             tick.invoke(timer);
         }
 
         TimeOutable timeOutable = mock(TimeOutable.class);
         given(timeOutable.isRunning()).willReturn(true);
-        TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(timeout, TimeUnit.MILLISECONDS));
+        TimeoutItem item = new TimeoutItem(timeOutable, Duration.ofMillis(timeout));
         timer.add(item);
 
         // When
@@ -85,17 +84,17 @@ public class WheelTimerTest {
     })
     public void should_timeout_all_items_with_tick_duration_at_thirty_ms(long timeout, long numberOfTick) throws InvocationTargetException, IllegalAccessException {
         // Given
-        Timeout tickDuration = new Timeout(30, TimeUnit.MILLISECONDS);
-        Timeout maxTimeout = new Timeout(5, TimeUnit.MINUTES);
+        Duration tickDuration = Duration.ofMillis(30);
+        Duration maxTimeout = Duration.ofMinutes(5);
         WheelTimer timer = new WheelTimer(tickDuration, maxTimeout);
 
         TimeOutable timeOutable = mock(TimeOutable.class);
         given(timeOutable.isRunning()).willReturn(true);
-        TimeoutItem item = new TimeoutItem(timeOutable, new Timeout(timeout, TimeUnit.MILLISECONDS));
+        TimeoutItem item = new TimeoutItem(timeOutable, Duration.ofMillis(timeout));
         timer.add(item);
 
         // When
-        for (int i=0; i<numberOfTick-1; i++) {
+        for (int i = 0; i < numberOfTick - 1; i++) {
             tick.invoke(timer);
         }
 

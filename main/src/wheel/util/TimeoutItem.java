@@ -1,25 +1,27 @@
 package wheel.util;
 
+import java.time.Duration;
+
 public class TimeoutItem {
 
     private final TimeOutable item;
-    private Timeout timeout;
+    private long timeoutMillis;
 
 
-    public TimeoutItem(TimeOutable item, Timeout timeout) {
+    public TimeoutItem(TimeOutable item, Duration timeout) {
         this.item = item;
-        this.timeout = timeout;
+        this.timeoutMillis = timeout.toMillis();
     }
 
-    public void updateTimeout(Timeout newTimeout) {
-        timeout = newTimeout;
+    public void updateTimeout(long newTimeout) {
+        timeoutMillis = newTimeout;
     }
 
     public TimeOutable getItem() {
         return item;
     }
 
-    public Timeout getTimeout() {
-        return timeout;
+    public long getTimeoutInMillis() {
+        return timeoutMillis;
     }
 }

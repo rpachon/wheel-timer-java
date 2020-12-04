@@ -5,15 +5,14 @@ import net.openhft.chronicle.core.jlbh.JLBHOptions;
 import net.openhft.chronicle.core.jlbh.JLBHTask;
 import wheel.WheelTimer;
 import wheel.util.TimeOutable;
-import wheel.util.Timeout;
 import wheel.util.TimeoutItem;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class BenchmarkTimeout implements JLBHTask {
 
-    public static final int WARMUP_ITERATION = 10;
-    public static final int THROUGHPUT = 1_000;
+    public static final int WARMUP_ITERATION = 100_000;
+    public static final int THROUGHPUT = 1_000_000;
     public static final int SECOND_NUMBER = 10;
     public static final int RUNS = 5;
     private WheelTimer timer;
@@ -22,7 +21,7 @@ public class BenchmarkTimeout implements JLBHTask {
     private long min = Long.MAX_VALUE;
     private long max = Long.MIN_VALUE;
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
 
         JLBHOptions lth = new JLBHOptions()
                 .warmUpIterations(WARMUP_ITERATION)
@@ -39,14 +38,13 @@ public class BenchmarkTimeout implements JLBHTask {
     @Override
     public void init(JLBH jlbh) {
         this.jlbh = jlbh;
-        timer = new WheelTimer(new Timeout(5, TimeUnit.MILLISECONDS),
-                new Timeout(2, TimeUnit.SECONDS));
+        timer = new WheelTimer(Duration.ofMillis(10), Duration.ofSeconds(5));
         timer.start();
     }
 
     @Override
     public void run(long startTimeNS) {
-        TimeoutItem item = new TimeoutItem(new Item(startTimeNS), new Timeout(2, TimeUnit.SECONDS));
+        TimeoutItem item = new TimeoutItem(new Item(startTimeNS), Duration.ofSeconds(5));
         timer.add(item);
     }
 
